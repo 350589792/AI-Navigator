@@ -61,6 +61,7 @@ async def db_engine():
         # Create database if it doesn't exist
         if not database_exists(sync_engine.url):
             create_database(sync_engine.url)
+            logger.info(f"Created database: {sync_engine.url}")
 
         # Create async engine with minimal configuration
         engine = create_async_engine(
@@ -78,6 +79,7 @@ async def db_engine():
 
     except Exception as e:
         logger.error(f"Error setting up database: {e}")
+        logger.error(f"Database URL: {SQLALCHEMY_DATABASE_URL}")
         raise
     finally:
         # Cleanup
