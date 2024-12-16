@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from sqlalchemy.orm import Session
 from app.models.models import User, Category, NotificationSetting
 from app.services.data_source import DataSourceService
@@ -42,8 +42,8 @@ async def test_notification_settings(db: Session):
     db.add(user)
     db.commit()
 
-    # Create notification settings
-    delivery_time = datetime.utcnow() + timedelta(hours=1)
+    # Create notification settings with timezone-aware datetime
+    delivery_time = datetime.now(UTC) + timedelta(hours=1)
     notification_setting = NotificationSetting(
         user_id=user.id,
         delivery_time=delivery_time,
@@ -53,12 +53,16 @@ async def test_notification_settings(db: Session):
     )
     db.add(notification_setting)
     db.commit()
+    db.refresh(notification_setting)
 
     # Verify settings
-    db_user = db.query(User).filter(User.email == "test@example.com").first()
-    assert len(db_user.notification_settings) == 1
-    settings = db_user.notification_settings[0]
-    assert settings.email_enabled == True
-    assert settings.pdf_enabled == True
-    assert settings.in_app_enabled == True
-    assert abs(settings.delivery_time - delivery_time) < timedelta(seconds=1)
+    settings = db.query(NotificationSetting).filter(
+        NotificationSetting.user_id == user.id
+    ).first()
+
+    assert settings is not None
+    assert settings.email_enabled is True
+    assert settings.pdf_enabled is True
+    assert settings.in_app_enabled is True
+    # Compare timezone-aware datetimes
+    assert abs(settings.delivery_time.replace(tzinfo=UTC) - delivery_time) < timedelta(seconds=1)

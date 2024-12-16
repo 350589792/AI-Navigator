@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from sqlalchemy.orm import Session
 from app.models.models import Category, DataSource
 from app.schemas.data_source import DataSourceCreate
@@ -67,7 +67,7 @@ class DataSourceService:
         """Update the last_crawled timestamp for a data source"""
         data_source = db.query(DataSource).filter(DataSource.id == data_source_id).first()
         if data_source:
-            data_source.last_crawled = datetime.utcnow()
+            data_source.last_crawled = datetime.now(UTC)
             db.commit()
             return True
         return False
