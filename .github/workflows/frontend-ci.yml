@@ -18,23 +18,20 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+          cache-dependency-path: ai-navigator-frontend/package-lock.json
 
       - name: Install dependencies
         working-directory: ./ai-navigator-frontend
-        run: |
-          npm install
+        run: npm ci
 
       - name: Run tests
         working-directory: ./ai-navigator-frontend
-        run: |
-          npm run test
+        run: npm run test
 
       - name: Build
         working-directory: ./ai-navigator-frontend
-        run: |
-          npm run build
+        run: npm run build
 
       - name: Lint
         working-directory: ./ai-navigator-frontend
-        run: |
-          npm run lint
+        run: npm run lint
