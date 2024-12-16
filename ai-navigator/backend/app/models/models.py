@@ -1,7 +1,10 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Table
+from sqlalchemy import (
+    Column, Integer, String, ForeignKey,
+    DateTime, Boolean, Table
+)
 from sqlalchemy.orm import relationship
 from app.models.base import Base, BaseModel, TimestampMixin
-from datetime import datetime, UTC
+
 
 # Association table for user preferences
 user_category_association = Table(
@@ -11,13 +14,19 @@ user_category_association = Table(
     Column('category_id', Integer, ForeignKey('categories.id'))
 )
 
+
 class Category(BaseModel, TimestampMixin):
     __tablename__ = "categories"
 
     name = Column(String, unique=True, index=True)
     description = Column(String)
     data_sources = relationship("DataSource", back_populates="category")
-    users = relationship("User", secondary=user_category_association, back_populates="preferred_categories")
+    users = relationship(
+        "User",
+        secondary=user_category_association,
+        back_populates="preferred_categories"
+    )
+
 
 class DataSource(BaseModel, TimestampMixin):
     __tablename__ = "data_sources"
@@ -31,14 +40,23 @@ class DataSource(BaseModel, TimestampMixin):
 
     category = relationship("Category", back_populates="data_sources")
 
+
 class User(BaseModel, TimestampMixin):
     __tablename__ = "users"
 
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
-    preferred_categories = relationship("Category", secondary=user_category_association, back_populates="users")
-    notification_settings = relationship("NotificationSetting", back_populates="user")
+    preferred_categories = relationship(
+        "Category",
+        secondary=user_category_association,
+        back_populates="users"
+    )
+    notification_settings = relationship(
+        "NotificationSetting",
+        back_populates="user"
+    )
+
 
 class NotificationSetting(BaseModel, TimestampMixin):
     __tablename__ = "notification_settings"

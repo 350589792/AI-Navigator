@@ -1,10 +1,7 @@
-import os
-from datetime import datetime
 from fastapi import BackgroundTasks
-from sqlalchemy.orm import Session
-from app.models.models import User, Category
 from app.services.report_generator import ReportGenerator
 from app.services.email_service import EmailService
+
 
 class NotificationService:
     def __init__(self):
@@ -21,7 +18,9 @@ class NotificationService:
     ):
         """Send daily report through specified channels"""
         # Generate report content
-        report_content = await self.report_generator.generate_daily_report(user_id)
+        report_content = await self.report_generator.generate_daily_report(
+            user_id
+        )
 
         if email_enabled:
             # Send email in background if background_tasks is provided
@@ -40,7 +39,7 @@ class NotificationService:
                 )
 
         if pdf_enabled:
-            pdf_path = await self.report_generator.generate_pdf_report(
+            await self.report_generator.generate_pdf_report(
                 user_id=user_id,
                 content=report_content
             )

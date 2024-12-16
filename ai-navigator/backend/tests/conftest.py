@@ -1,16 +1,18 @@
-import os
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 from sqlalchemy_utils import database_exists, create_database, drop_database
 
 from app.db.base import Base
-from app.core.config import settings
-from app.models.models import *  # Import all models to ensure they're registered
+# These imports are needed to register models with SQLAlchemy
+from app.models.models import (  # noqa: F401
+    User, Category, DataSource, NotificationSetting
+)
+
 
 # Test database URL matching CI environment
 SQLALCHEMY_DATABASE_URL = "postgresql://postgres:postgres@localhost/test_db"
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
@@ -26,6 +28,7 @@ def setup_test_db():
     # Drop database after all tests
     drop_database(engine.url)
 
+
 @pytest.fixture(scope="function")
 def db_session(setup_test_db):
     """Create a new database session for a test."""
@@ -39,6 +42,7 @@ def db_session(setup_test_db):
     session.close()
     transaction.rollback()
     connection.close()
+
 
 @pytest.fixture(scope="function")
 def db(db_session):

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.models.models import Category, DataSource
 from app.services.data_source import DataSourceService, PRESET_CATEGORIES
 
+
 @pytest.mark.asyncio
 async def test_initialize_preset_data(db: Session):
     """Test initialization of preset categories and data sources"""
@@ -17,9 +18,12 @@ async def test_initialize_preset_data(db: Session):
 
     # Verify each category has exactly one preset source
     for category in categories:
-        sources = await DataSourceService.get_data_sources_by_category(db, category.id)
+        sources = await DataSourceService.get_data_sources_by_category(
+            db, category.id
+        )
         assert len(sources) == 1
-        assert sources[0].is_preset == True
+        assert sources[0].is_preset.is_(True)
+
 
 @pytest.mark.asyncio
 async def test_create_custom_data_source(db: Session):
@@ -38,12 +42,15 @@ async def test_create_custom_data_source(db: Session):
         crawl_frequency=30
     )
 
-    data_source = await DataSourceService.create_data_source(db, data_source_data)
+    data_source = await DataSourceService.create_data_source(
+        db, data_source_data
+    )
     assert data_source.name == "Test Source"
     assert data_source.url == "https://test.com"
     assert data_source.category_id == category.id
-    assert data_source.is_preset == False
+    assert data_source.is_preset.is_(False)
     assert data_source.crawl_frequency == 30
+
 
 @pytest.mark.asyncio
 async def test_update_last_crawled(db: Session):
@@ -65,8 +72,10 @@ async def test_update_last_crawled(db: Session):
 
     # Update last_crawled
     success = await DataSourceService.update_last_crawled(db, data_source.id)
-    assert success == True
+    assert success.is_(True)
 
     # Verify timestamp was updated
-    updated_source = db.query(DataSource).filter(DataSource.id == data_source.id).first()
+    updated_source = (
+        db.query(DataSource).filter(DataSource.id == data_source.id).first()
+    )
     assert updated_source.last_crawled is not None

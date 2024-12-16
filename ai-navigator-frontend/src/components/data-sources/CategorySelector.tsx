@@ -5,9 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, Check } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import axios from 'axios';
-import { API_URL } from '@/config';
+import { API_BASE_URL } from '@/config';
 
 interface Category {
   id: number;
@@ -35,7 +35,7 @@ export const CategorySelector: React.FC = () => {
     // Load categories
     const fetchCategories = async () => {
       try {
-        const response = await axios.get(`${API_URL}/categories`);
+        const response = await axios.get<Category[]>(`${API_BASE_URL}/categories`);
         setCategories(response.data);
       } catch (err) {
         setError('Failed to load categories');
@@ -49,8 +49,8 @@ export const CategorySelector: React.FC = () => {
     if (selectedCategory) {
       const fetchDataSources = async () => {
         try {
-          const response = await axios.get(
-            `${API_URL}/data-sources/category/${selectedCategory}`
+          const response = await axios.get<DataSource[]>(
+            `${API_BASE_URL}/data-sources/category/${selectedCategory}`
           );
           setDataSources(response.data);
         } catch (err) {
@@ -68,15 +68,15 @@ export const CategorySelector: React.FC = () => {
     }
 
     try {
-      await axios.post(`${API_URL}/data-sources`, {
+      await axios.post(`${API_BASE_URL}/data-sources`, {
         name: customName,
         url: customUrl,
         category_id: selectedCategory
       });
 
       // Refresh data sources
-      const response = await axios.get(
-        `${API_URL}/data-sources/category/${selectedCategory}`
+      const response = await axios.get<DataSource[]>(
+        `${API_BASE_URL}/data-sources/category/${selectedCategory}`
       );
       setDataSources(response.data);
 

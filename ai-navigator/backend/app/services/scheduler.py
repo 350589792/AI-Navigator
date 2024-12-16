@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.models.models import User, NotificationSetting
 from app.services.notification import NotificationService
 
+
 class SchedulerService:
     def __init__(self, db: Session):
         self.db = db
@@ -16,7 +17,7 @@ class SchedulerService:
         settings = (
             self.db.query(NotificationSetting)
             .join(User)
-            .filter(User.is_active == True)
+            .filter(User.is_active.is_(True))
             .all()
         )
 

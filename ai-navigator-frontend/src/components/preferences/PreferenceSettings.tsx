@@ -7,16 +7,15 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
 import axios from 'axios';
-import { API_URL } from '@/config';
+import { API_BASE_URL } from '@/config';
 
 interface Category {
   id: number;
   name: string;
 }
 
-interface Preference {
-  id: number;
-  category_id: number;
+interface UserPreferences {
+  categories: { id: number }[];
   keywords: string[];
   schedule_time: string;
   timezone: string;
@@ -36,8 +35,8 @@ export const PreferenceSettings: React.FC = () => {
     const fetchData = async () => {
       try {
         const [categoriesRes, preferencesRes] = await Promise.all([
-          axios.get(`${API_URL}/categories`),
-          axios.get(`${API_URL}/preferences`)
+          axios.get<Category[]>(`${API_BASE_URL}/categories`),
+          axios.get<UserPreferences>(`${API_BASE_URL}/preferences`)
         ]);
 
         setCategories(categoriesRes.data);
@@ -78,7 +77,7 @@ export const PreferenceSettings: React.FC = () => {
 
   const handleSavePreferences = async () => {
     try {
-      await axios.post(`${API_URL}/preferences`, {
+      await axios.post(`${API_BASE_URL}/preferences`, {
         categories: selectedCategories,
         keywords,
         schedule_time: scheduleTime,
@@ -159,11 +158,11 @@ export const PreferenceSettings: React.FC = () => {
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
           >
-            {Intl.supportedValuesOf('timeZone').map((tz) => (
-              <option key={tz} value={tz}>
-                {tz}
-              </option>
-            ))}
+            <option value="Asia/Shanghai">Asia/Shanghai</option>
+            <option value="Asia/Tokyo">Asia/Tokyo</option>
+            <option value="Europe/London">Europe/London</option>
+            <option value="America/New_York">America/New_York</option>
+            <option value="America/Los_Angeles">America/Los_Angeles</option>
           </select>
         </div>
       </div>

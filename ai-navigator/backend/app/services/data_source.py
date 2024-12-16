@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.models.models import Category, DataSource
 from app.schemas.data_source import DataSourceCreate
 
+
 PRESET_CATEGORIES = [
     {"name": "新闻", "description": "新闻资讯"},
     {"name": "科技", "description": "科技动态"},
@@ -10,12 +11,14 @@ PRESET_CATEGORIES = [
     {"name": "体育", "description": "体育新闻"}
 ]
 
+
 PRESET_SOURCES = {
     "新闻": [{"name": "新浪新闻", "url": "https://news.sina.com.cn/"}],
     "科技": [{"name": "36氪", "url": "https://36kr.com/"}],
     "财经": [{"name": "东方财富", "url": "https://www.eastmoney.com/"}],
     "体育": [{"name": "腾讯体育", "url": "https://sports.qq.com/"}]
 }
+
 
 class DataSourceService:
     @staticmethod
@@ -60,12 +63,21 @@ class DataSourceService:
     @staticmethod
     async def get_data_sources_by_category(db: Session, category_id: int):
         """Get all data sources for a specific category"""
-        return db.query(DataSource).filter(DataSource.category_id == category_id).all()
+        return (
+            db.query(DataSource)
+            .filter(DataSource.category_id == category_id)
+            .all()
+        )
+
 
     @staticmethod
     async def update_last_crawled(db: Session, data_source_id: int):
         """Update the last_crawled timestamp for a data source"""
-        data_source = db.query(DataSource).filter(DataSource.id == data_source_id).first()
+        data_source = (
+            db.query(DataSource)
+            .filter(DataSource.id == data_source_id)
+            .first()
+        )
         if data_source:
             data_source.last_crawled = datetime.now(UTC)
             db.commit()

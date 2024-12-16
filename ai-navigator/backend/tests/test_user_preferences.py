@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.models import User, Category, NotificationSetting
 from app.services.data_source import DataSourceService
 
+
 @pytest.mark.asyncio
 async def test_user_category_preferences(db: Session):
     """Test user category preferences"""
@@ -30,6 +31,7 @@ async def test_user_category_preferences(db: Session):
     assert len(db_user.preferred_categories) == 2
     category_names = {cat.name for cat in db_user.preferred_categories}
     assert category_names == {categories[0].name, categories[1].name}
+
 
 @pytest.mark.asyncio
 async def test_notification_settings(db: Session):
@@ -65,4 +67,5 @@ async def test_notification_settings(db: Session):
     assert settings.pdf_enabled is True
     assert settings.in_app_enabled is True
     # Compare timezone-aware datetimes
-    assert abs(settings.delivery_time.replace(tzinfo=UTC) - delivery_time) < timedelta(seconds=1)
+    time_diff = abs(settings.delivery_time.replace(tzinfo=UTC) - delivery_time)
+    assert time_diff < timedelta(seconds=1)
