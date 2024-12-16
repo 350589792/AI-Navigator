@@ -49,7 +49,10 @@ export const PreferenceSettings: React.FC = () => {
           setScheduleTime(prefs.schedule_time || '09:00');
           setTimezone(prefs.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
         }
-      } catch {
+      } catch (
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _: unknown
+      ) {
         setError('Failed to load preferences');
       }
     };
@@ -84,7 +87,10 @@ export const PreferenceSettings: React.FC = () => {
         timezone
       });
       setError(null);
-    } catch {
+    } catch (
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      _: unknown
+    ) {
       setError('Failed to save preferences');
     }
   };

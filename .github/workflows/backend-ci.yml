@@ -11,11 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:13
+        image: postgres:latest
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
+          POSTGRES_DB: testdb
         ports:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
@@ -39,7 +39,7 @@ jobs:
       - name: Run tests
         working-directory: ./ai-navigator/backend
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/testdb
           SECRET_KEY: test_secret_key
         run: |
           poetry run pytest tests/
