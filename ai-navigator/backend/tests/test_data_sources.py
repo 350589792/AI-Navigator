@@ -34,7 +34,11 @@ async def test_initialize_preset_data(db: AsyncSession):
             )
             sources = result.scalars().all()
             expected_sources = len(PRESET_SOURCES[category.name])
-            assert len(sources) == expected_sources, f"Category {category.name} should have {expected_sources} sources but has {len(sources)}"
+            error_msg = (
+                f"Category {category.name} should have {expected_sources} sources "
+                f"but has {len(sources)}"
+            )
+            assert len(sources) == expected_sources, error_msg
             total_sources += len(sources)
             for source in sources:
                 assert source.is_preset is True

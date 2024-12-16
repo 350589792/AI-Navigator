@@ -3,6 +3,7 @@ from datetime import datetime, UTC
 
 from app.db.base_class import Base
 
+
 class TimestampMixin:
     """Mixin for adding created_at and updated_at timestamps to models."""
     created_at = Column(

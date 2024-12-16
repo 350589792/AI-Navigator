@@ -2,6 +2,7 @@ import os
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     """Application settings."""
     PROJECT_NAME: str = "AI Navigator"
@@ -52,5 +53,6 @@ class Settings(BaseSettings):
     EMAILS_FROM_NAME: Optional[str] = None
 
     model_config = SettingsConfigDict(case_sensitive=True)
+
 
 settings = Settings()

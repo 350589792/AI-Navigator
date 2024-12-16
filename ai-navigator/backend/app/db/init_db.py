@@ -1,10 +1,10 @@
-from typing import AsyncGenerator
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.base import Base
-from app.models.models import Category, User, DataSource, NotificationSetting
+from app.models.models import Category
+
 
 logger = logging.getLogger(__name__)
+
 
 async def create_initial_data(session: AsyncSession) -> None:
     """Create initial data in the database."""
@@ -24,6 +24,7 @@ async def create_initial_data(session: AsyncSession) -> None:
     except Exception as e:
         logger.error(f"Error creating initial data: {e}")
         raise
+
 
 async def init_db(session: AsyncSession) -> None:
     """Initialize the database with initial data."""

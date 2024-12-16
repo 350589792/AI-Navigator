@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     async_scoped_session,
 )
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 from sqlalchemy_utils import database_exists, create_database, drop_database
 from asyncio import current_task
@@ -34,10 +33,12 @@ os.environ["TESTING"] = "1"
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 SYNC_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("+asyncpg", "")
 
+
 @pytest.fixture(scope="session")
 def event_loop_policy():
     """Create and set a custom event loop policy for the test session."""
     return asyncio.get_event_loop_policy()
+
 
 @pytest.fixture(scope="session")
 def event_loop(event_loop_policy):
@@ -45,6 +46,7 @@ def event_loop(event_loop_policy):
     loop = event_loop_policy.new_event_loop()
     yield loop
     loop.close()
+
 
 @pytest_asyncio.fixture(scope="session")
 async def db_engine():
@@ -85,6 +87,7 @@ async def db_engine():
             sync_engine.dispose()
             if database_exists(sync_engine.url):
                 drop_database(sync_engine.url)
+
 
 @pytest_asyncio.fixture
 async def db(db_engine) -> AsyncSession:

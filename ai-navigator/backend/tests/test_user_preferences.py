@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 from app.models.models import User, Category, NotificationSetting, UserCategoryAssociation
 from app.services.data_source import DataSourceService
 
+
 @pytest.mark.asyncio
 async def test_user_category_preferences(db: AsyncSession):
     """Test user category preferences"""
@@ -57,6 +58,7 @@ async def test_user_category_preferences(db: AsyncSession):
         category_names = {cat.name for cat in db_user.preferred_categories}
         assert len(category_names) == 2
         assert all(cat.name in category_names for cat in categories[:2])
+
 
 @pytest.mark.asyncio
 async def test_notification_settings(db: AsyncSession):
