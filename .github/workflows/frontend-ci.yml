@@ -3,7 +3,7 @@ name: Frontend CI
 on:
   pull_request:
     paths:
-      - 'frontend/**'
+      - 'ai-navigator-frontend/**'
       - '.github/workflows/frontend-ci.yml'
 
 jobs:
@@ -20,21 +20,21 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        working-directory: ./frontend
+        working-directory: ./ai-navigator-frontend
         run: |
           npm install
 
       - name: Run tests
-        working-directory: ./frontend
+        working-directory: ./ai-navigator-frontend
         run: |
           npm run test
 
       - name: Build
-        working-directory: ./frontend
+        working-directory: ./ai-navigator-frontend
         run: |
           npm run build
 
       - name: Lint
-        working-directory: ./frontend
+        working-directory: ./ai-navigator-frontend
         run: |
           npm run lint
