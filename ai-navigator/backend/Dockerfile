@@ -6,20 +6,16 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH="/root/.local/bin:$PATH"
-
-# Configure poetry
-RUN poetry config virtualenvs.create false
-
-# Copy project files
+# Copy poetry files
 COPY pyproject.toml poetry.lock ./
 
-# Install dependencies
-RUN poetry install --no-dev --no-interaction --no-ansi
+# Install poetry and dependencies
+RUN pip install poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-dev --no-interaction --no-ansi
 
 # Copy application code
 COPY . .
@@ -28,5 +24,5 @@ COPY . .
 ENV PYTHONPATH=/app
 ENV PORT=8000
 
-# Run the application
-CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application using uvicorn directly
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
