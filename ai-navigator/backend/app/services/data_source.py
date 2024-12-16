@@ -1,5 +1,6 @@
 from datetime import datetime, UTC
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.models import Category, DataSource
 from app.schemas.data_source import DataSourceCreate
 
@@ -22,18 +23,23 @@ PRESET_SOURCES = {
 
 class DataSourceService:
     @staticmethod
-    async def initialize_preset_data(db: Session):
+    async def initialize_preset_data(db: AsyncSession):
         """Initialize preset categories and data sources"""
+        # Create categories first
+        categories = {}
         for category_data in PRESET_CATEGORIES:
             category = Category(
                 name=category_data["name"],
                 description=category_data["description"]
             )
             db.add(category)
-            db.flush()  # Get category ID
+            await db.flush()
+            categories[category.name] = category
 
-            # Add preset sources for this category
-            for source_data in PRESET_SOURCES[category_data["name"]]:
+        # Then create data sources for each category
+        for category_name, sources in PRESET_SOURCES.items():
+            category = categories[category_name]
+            for source_data in sources:
                 source = DataSource(
                     name=source_data["name"],
                     url=source_data["url"],
@@ -42,11 +48,10 @@ class DataSourceService:
                     crawl_frequency=60  # Default to hourly
                 )
                 db.add(source)
-
-        db.commit()
+                await db.flush()
 
     @staticmethod
-    async def create_data_source(db: Session, data_source: DataSourceCreate):
+    async def create_data_source(db: AsyncSession, data_source: DataSourceCreate):
         """Create a new custom data source"""
         db_data_source = DataSource(
             name=data_source.name,
@@ -56,30 +61,26 @@ class DataSourceService:
             crawl_frequency=data_source.crawl_frequency
         )
         db.add(db_data_source)
-        db.commit()
-        db.refresh(db_data_source)
+        await db.flush()  # Get the ID
         return db_data_source
 
     @staticmethod
-    async def get_data_sources_by_category(db: Session, category_id: int):
+    async def get_data_sources_by_category(db: AsyncSession, category_id: int):
         """Get all data sources for a specific category"""
-        return (
-            db.query(DataSource)
-            .filter(DataSource.category_id == category_id)
-            .all()
+        result = await db.execute(
+            select(DataSource).filter(DataSource.category_id == category_id)
         )
-
+        return result.scalars().all()
 
     @staticmethod
-    async def update_last_crawled(db: Session, data_source_id: int):
+    async def update_last_crawled(db: AsyncSession, data_source_id: int):
         """Update the last_crawled timestamp for a data source"""
-        data_source = (
-            db.query(DataSource)
-            .filter(DataSource.id == data_source_id)
-            .first()
+        result = await db.execute(
+            select(DataSource).filter(DataSource.id == data_source_id)
         )
+        data_source = result.scalar_one_or_none()
         if data_source:
             data_source.last_crawled = datetime.now(UTC)
-            db.commit()
+            await db.flush()
             return True
         return False

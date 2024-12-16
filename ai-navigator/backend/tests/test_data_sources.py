@@ -1,81 +1,121 @@
 import pytest
-from sqlalchemy.orm import Session
+from sqlalchemy import select, delete
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.models import Category, DataSource
-from app.services.data_source import DataSourceService, PRESET_CATEGORIES
+from app.services.data_source import DataSourceService, PRESET_CATEGORIES, PRESET_SOURCES
 
 
-@pytest.mark.asyncio
-async def test_initialize_preset_data(db: Session):
+@pytest.mark.asyncio(scope="function")
+async def test_initialize_preset_data(db: AsyncSession):
     """Test initialization of preset categories and data sources"""
-    await DataSourceService.initialize_preset_data(db)
+    async with db.begin():
+        # Clean up any existing data
+        await db.execute(delete(DataSource))
+        await db.execute(delete(Category))
+        await db.flush()
 
-    # Verify categories
-    categories = db.query(Category).all()
-    assert len(categories) == len(PRESET_CATEGORIES)
-    category_names = {cat.name for cat in categories}
-    expected_names = {cat["name"] for cat in PRESET_CATEGORIES}
-    assert category_names == expected_names
+        # Initialize preset data
+        await DataSourceService.initialize_preset_data(db)
+        await db.flush()
 
-    # Verify each category has exactly one preset source
-    for category in categories:
-        sources = await DataSourceService.get_data_sources_by_category(
-            db, category.id
-        )
-        assert len(sources) == 1
-        assert sources[0].is_preset.is_(True)
+        # Verify categories
+        result = await db.execute(select(Category))
+        categories = result.scalars().all()
+        assert len(categories) == len(PRESET_CATEGORIES)
+        category_names = {cat.name for cat in categories}
+        expected_names = {cat["name"] for cat in PRESET_CATEGORIES}
+        assert category_names == expected_names
+
+        # Verify each category has its preset sources
+        total_sources = 0
+        for category in categories:
+            result = await db.execute(
+                select(DataSource).filter(DataSource.category_id == category.id)
+            )
+            sources = result.scalars().all()
+            expected_sources = len(PRESET_SOURCES[category.name])
+            assert len(sources) == expected_sources, f"Category {category.name} should have {expected_sources} sources but has {len(sources)}"
+            total_sources += len(sources)
+            for source in sources:
+                assert source.is_preset is True
+                assert source.category_id == category.id
+
+        # Verify total number of sources
+        total_expected_sources = sum(len(sources) for sources in PRESET_SOURCES.values())
+        assert total_sources == total_expected_sources
 
 
-@pytest.mark.asyncio
-async def test_create_custom_data_source(db: Session):
+@pytest.mark.asyncio(scope="function")
+async def test_create_custom_data_source(db: AsyncSession):
     """Test creating a custom data source"""
-    # First create a category
-    category = Category(name="Test Category", description="Test Description")
-    db.add(category)
-    db.commit()
+    async with db.begin():
+        # Clean up any existing data
+        await db.execute(delete(DataSource))
+        await db.execute(delete(Category))
+        await db.flush()
 
-    # Create custom data source
-    from app.schemas.data_source import DataSourceCreate
-    data_source_data = DataSourceCreate(
-        name="Test Source",
-        url="https://test.com",
-        category_id=category.id,
-        crawl_frequency=30
-    )
+        # Create a category
+        category = Category(name="Test Category", description="Test Description")
+        db.add(category)
+        await db.flush()
 
-    data_source = await DataSourceService.create_data_source(
-        db, data_source_data
-    )
-    assert data_source.name == "Test Source"
-    assert data_source.url == "https://test.com"
-    assert data_source.category_id == category.id
-    assert data_source.is_preset.is_(False)
-    assert data_source.crawl_frequency == 30
+        # Create custom data source
+        from app.schemas.data_source import DataSourceCreate
+        data_source_data = DataSourceCreate(
+            name="Test Source",
+            url="https://test.com",
+            category_id=category.id,
+            crawl_frequency=30
+        )
+
+        data_source = await DataSourceService.create_data_source(
+            db, data_source_data
+        )
+        await db.flush()
+
+        # Verify the data source was created correctly
+        result = await db.execute(
+            select(DataSource).filter(DataSource.id == data_source.id)
+        )
+        created_source = result.scalar_one()
+        assert created_source.name == "Test Source"
+        assert created_source.url == "https://test.com"
+        assert created_source.category_id == category.id
+        assert created_source.is_preset is False
+        assert created_source.crawl_frequency == 30
 
 
-@pytest.mark.asyncio
-async def test_update_last_crawled(db: Session):
+@pytest.mark.asyncio(scope="function")
+async def test_update_last_crawled(db: AsyncSession):
     """Test updating last_crawled timestamp"""
-    # Create a test data source
-    category = Category(name="Test Category", description="Test Description")
-    db.add(category)
-    db.commit()
+    async with db.begin():
+        # Clean up any existing data
+        await db.execute(delete(DataSource))
+        await db.execute(delete(Category))
+        await db.flush()
 
-    data_source = DataSource(
-        name="Test Source",
-        url="https://test.com",
-        category_id=category.id,
-        is_preset=False,
-        crawl_frequency=30
-    )
-    db.add(data_source)
-    db.commit()
+        # Create a test data source
+        category = Category(name="Test Category", description="Test Description")
+        db.add(category)
+        await db.flush()
 
-    # Update last_crawled
-    success = await DataSourceService.update_last_crawled(db, data_source.id)
-    assert success.is_(True)
+        data_source = DataSource(
+            name="Test Source",
+            url="https://test.com",
+            category_id=category.id,
+            is_preset=False,
+            crawl_frequency=30
+        )
+        db.add(data_source)
+        await db.flush()
 
-    # Verify timestamp was updated
-    updated_source = (
-        db.query(DataSource).filter(DataSource.id == data_source.id).first()
-    )
-    assert updated_source.last_crawled is not None
+        # Update last_crawled
+        success = await DataSourceService.update_last_crawled(db, data_source.id)
+        assert success is True
+
+        # Verify timestamp was updated
+        result = await db.execute(
+            select(DataSource).filter(DataSource.id == data_source.id)
+        )
+        updated_source = result.scalar_one()
+        assert updated_source.last_crawled is not None

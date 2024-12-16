@@ -37,7 +37,7 @@ export const CategorySelector: React.FC = () => {
       try {
         const response = await axios.get<Category[]>(`${API_BASE_URL}/categories`);
         setCategories(response.data);
-      } catch (err) {
+      } catch {
         setError('Failed to load categories');
       }
     };
@@ -53,7 +53,7 @@ export const CategorySelector: React.FC = () => {
             `${API_BASE_URL}/data-sources/category/${selectedCategory}`
           );
           setDataSources(response.data);
-        } catch (err) {
+        } catch {
           setError('Failed to load data sources');
         }
       };
@@ -84,7 +84,7 @@ export const CategorySelector: React.FC = () => {
       setCustomUrl('');
       setCustomName('');
       setError(null);
-    } catch (err) {
+    } catch {
       setError('Failed to add custom source');
     }
   };

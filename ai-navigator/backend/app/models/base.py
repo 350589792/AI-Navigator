@@ -1,10 +1,7 @@
-from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, Integer, DateTime
 from datetime import datetime, UTC
 
-# Create base class for SQLAlchemy declarative models
-Base = declarative_base()
-
+from app.db.base_class import Base
 
 class TimestampMixin:
     """Mixin for adding created_at and updated_at timestamps to models."""

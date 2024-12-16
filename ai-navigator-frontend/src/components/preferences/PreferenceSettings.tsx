@@ -44,12 +44,12 @@ export const PreferenceSettings: React.FC = () => {
         // Set existing preferences
         const prefs = preferencesRes.data;
         if (prefs) {
-          setSelectedCategories(prefs.categories.map((c: any) => c.id));
+          setSelectedCategories(prefs.categories.map((cat) => cat.id));
           setKeywords(prefs.keywords || []);
           setScheduleTime(prefs.schedule_time || '09:00');
           setTimezone(prefs.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
         }
-      } catch (err) {
+      } catch {
         setError('Failed to load preferences');
       }
     };
@@ -84,7 +84,7 @@ export const PreferenceSettings: React.FC = () => {
         timezone
       });
       setError(null);
-    } catch (err) {
+    } catch {
       setError('Failed to save preferences');
     }
   };

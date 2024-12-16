@@ -1,18 +1,16 @@
 from sqlalchemy import (
     Column, Integer, String, ForeignKey,
-    DateTime, Boolean, Table
+    DateTime, Boolean
 )
 from sqlalchemy.orm import relationship
 from app.models.base import Base, BaseModel, TimestampMixin
 
 
-# Association table for user preferences
-user_category_association = Table(
-    'user_category_association',
-    Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id')),
-    Column('category_id', Integer, ForeignKey('categories.id'))
-)
+class UserCategoryAssociation(Base):
+    __tablename__ = 'user_category_association'
+
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    category_id = Column(Integer, ForeignKey('categories.id'), primary_key=True)
 
 
 class Category(BaseModel, TimestampMixin):
@@ -23,7 +21,7 @@ class Category(BaseModel, TimestampMixin):
     data_sources = relationship("DataSource", back_populates="category")
     users = relationship(
         "User",
-        secondary=user_category_association,
+        secondary="user_category_association",
         back_populates="preferred_categories"
     )
 
@@ -49,7 +47,7 @@ class User(BaseModel, TimestampMixin):
     is_active = Column(Boolean, default=True)
     preferred_categories = relationship(
         "Category",
-        secondary=user_category_association,
+        secondary="user_category_association",
         back_populates="users"
     )
     notification_settings = relationship(
