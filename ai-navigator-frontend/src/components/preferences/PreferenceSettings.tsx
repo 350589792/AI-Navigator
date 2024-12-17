@@ -1,63 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
-import axios from 'axios';
-import { API_BASE_URL } from '@/config';
-
-interface Category {
-  id: number;
-  name: string;
-}
-
-interface UserPreferences {
-  categories: { id: number }[];
-  keywords: string[];
-  schedule_time: string;
-  timezone: string;
-}
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/lib/api';
+import type { Category, UserPreferences, ApiResponse } from '@/types/api';
 
 export const PreferenceSettings: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
-  const [keywords, setKeywords] = useState<string[]>([]);
-  const [newKeyword, setNewKeyword] = useState('');
-  const [scheduleTime, setScheduleTime] = useState('09:00');
-  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = React.useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = React.useState<number[]>([]);
+  const [keywords, setKeywords] = React.useState<string[]>([]);
+  const [newKeyword, setNewKeyword] = React.useState('');
+  const [scheduleTime, setScheduleTime] = React.useState('09:00');
+  const [timezone, setTimezone] = React.useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [loading, setLoading] = React.useState(true);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    // Load categories and user preferences
-    const fetchData = async () => {
-      try {
-        const [categoriesRes, preferencesRes] = await Promise.all([
-          axios.get<Category[]>(`${API_BASE_URL}/categories`),
-          axios.get<UserPreferences>(`${API_BASE_URL}/preferences`)
-        ]);
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [categoriesRes, preferencesRes] = await Promise.all([
+        api.get<ApiResponse<Category[]>>('/api/v1/data-sources/categories'),
+        api.get<ApiResponse<UserPreferences>>('/api/v1/preferences')
+      ]);
 
-        setCategories(categoriesRes.data);
+      setCategories(categoriesRes.data.data);
 
-        // Set existing preferences
-        const prefs = preferencesRes.data;
-        if (prefs) {
-          setSelectedCategories(prefs.categories.map((cat) => cat.id));
-          setKeywords(prefs.keywords || []);
-          setScheduleTime(prefs.schedule_time || '09:00');
-          setTimezone(prefs.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
-        }
-      } catch (
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        _: unknown
-      ) {
-        setError('Failed to load preferences');
+      const prefs = preferencesRes.data.data;
+      if (prefs) {
+        setSelectedCategories(prefs.categories.map((cat: { id: number }) => cat.id));
+        setKeywords(prefs.keywords || []);
+        setScheduleTime(prefs.schedule_time || '09:00');
+        setTimezone(prefs.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
       }
-    };
+    } catch (error) {
+      void error; // Explicitly mark error as intentionally unused
+      toast({
+        variant: "destructive",
+        title: "错误",
+        description: "加载偏好设置失败",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  React.useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleAddKeyword = () => {
     if (newKeyword && !keywords.includes(newKeyword)) {
@@ -80,29 +73,37 @@ export const PreferenceSettings: React.FC = () => {
 
   const handleSavePreferences = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/preferences`, {
-        categories: selectedCategories,
+      await api.post<ApiResponse<void>>('/api/v1/preferences', {
+        categories: selectedCategories.map(id => ({ id })),
         keywords,
         schedule_time: scheduleTime,
         timezone
       });
-      setError(null);
-    } catch (
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      _: unknown
-    ) {
-      setError('Failed to save preferences');
+      toast({
+        title: "成功",
+        description: "偏好设置已保存",
+      });
+    } catch (error) {
+      void error; // Explicitly mark error as intentionally unused
+      toast({
+        variant: "destructive",
+        title: "错误",
+        description: "保存偏好设置失败",
+      });
     }
   };
 
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">加载中...</div>;
+  }
+
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Subscription Preferences</h2>
+      <h2 className="text-2xl font-bold">订阅偏好设置</h2>
 
-      {/* Category Selection */}
       <div className="space-y-2">
-        <Label>Categories</Label>
-        <div className="grid grid-cols-4 gap-4">
+        <Label>分类</Label>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {categories.map((category) => (
             <Card
               key={category.id}
@@ -119,17 +120,16 @@ export const PreferenceSettings: React.FC = () => {
         </div>
       </div>
 
-      {/* Keywords */}
       <div className="space-y-2">
-        <Label>Keywords</Label>
+        <Label>关键词</Label>
         <div className="flex gap-2">
           <Input
             value={newKeyword}
             onChange={(e) => setNewKeyword(e.target.value)}
-            placeholder="Enter keyword"
+            placeholder="输入关键词"
             onKeyPress={(e) => e.key === 'Enter' && handleAddKeyword()}
           />
-          <Button onClick={handleAddKeyword}>Add</Button>
+          <Button onClick={handleAddKeyword}>添加</Button>
         </div>
         <div className="flex flex-wrap gap-2 mt-2">
           {keywords.map((keyword) => (
@@ -144,10 +144,9 @@ export const PreferenceSettings: React.FC = () => {
         </div>
       </div>
 
-      {/* Schedule Settings */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="scheduleTime">Report Time</Label>
+          <Label htmlFor="scheduleTime">报告时间</Label>
           <Input
             id="scheduleTime"
             type="time"
@@ -157,31 +156,24 @@ export const PreferenceSettings: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="timezone">Timezone</Label>
+          <Label htmlFor="timezone">时区</Label>
           <select
             id="timezone"
             className="w-full p-2 border rounded"
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
           >
-            <option value="Asia/Shanghai">Asia/Shanghai</option>
-            <option value="Asia/Tokyo">Asia/Tokyo</option>
-            <option value="Europe/London">Europe/London</option>
-            <option value="America/New_York">America/New_York</option>
-            <option value="America/Los_Angeles">America/Los_Angeles</option>
+            <option value="Asia/Shanghai">中国标准时间 (UTC+8)</option>
+            <option value="Asia/Tokyo">日本标准时间 (UTC+9)</option>
+            <option value="Asia/Singapore">新加坡标准时间 (UTC+8)</option>
+            <option value="Asia/Seoul">韩国标准时间 (UTC+9)</option>
           </select>
         </div>
       </div>
 
       <Button onClick={handleSavePreferences} className="w-full">
-        Save Preferences
+        保存设置
       </Button>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
     </div>
   );
 };
